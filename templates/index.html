@@ -1,0 +1,225 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<section class="card">
+  <h2>How are you feeling right now?</h2>
+
+  <form method="POST" action="{{ url_for('journal') }}" class="grid">
+    <!-- Journal text -->
+    <label>Your words
+      <textarea
+        name="entry_text"
+        rows="5"
+        placeholder="{{ prompt }}"
+        aria-label="Write how you feel"
+      ></textarea>
+    </label>
+
+    <!-- Mood slider + help -->
+    <label>Mood (0–10)
+      <input
+        id="mood"
+        class="range-colored"
+        type="range"
+        name="mood"
+        min="0"
+        max="10"
+        value="5"
+        oninput="updateMoodUI(this)"
+        aria-label="Mood from 0 to 10"
+      >
+      <div>
+        Now: <span id="moodval">5</span>
+        — <span id="mooddesc">Neutral / okay</span>
+        <span id="moodexample" style="opacity:.8"></span>
+        <button
+          type="button"
+          class="info-btn"
+          onclick="toggleMoodInfo()"
+          aria-expanded="false"
+          aria-controls="mood-info"
+          title="What does 0–10 mean?"
+          style="margin-left:6px"
+        >?</button>
+      </div>
+
+      <!-- Psychology-based anchors with examples -->
+      <div id="mood-info" class="mood-info hidden" role="region" aria-label="Mood scale description">
+        <ul>
+          <li><strong>0–1 — Crisis-level</strong><br><span>Overwhelming distress; functioning feels impossible. Consider crisis support immediately.</span><br><em>Example:</em> “I feel like I can’t cope at all.”</li>
+          <li><strong>2–3 — Very low</strong><br><span>Very sad/anxious; energy is very low; daily tasks are hard.</span><br><em>Example:</em> “I’m dragging myself through the day.”</li>
+          <li><strong>4 — Low</strong><br><span>Struggling, but able to keep moving with effort.</span><br><em>Example:</em> “I can function, but it feels heavy.”</li>
+          <li><strong>5–6 — Neutral / okay</strong><br><span>Neither low nor high; stable enough to manage routines.</span><br><em>Example:</em> “I feel flat but I’m managing.”</li>
+          <li><strong>7–8 — Good</strong><br><span>Positive mood, some motivation and hopefulness.</span><br><em>Example:</em> “I feel like things are going well.”</li>
+          <li><strong>9–10 — Excellent</strong><br><span>Very joyful/energized; feeling connected and flourishing.</span><br><em>Example:</em> “I feel on top of the world.”</li>
+        </ul>
+      </div>
+    </label>
+
+    <!-- Support flavor -->
+    <label>Support flavor
+      <select name="flavor" aria-label="Support flavor">
+        {% set default = settings.get('default_support_flavor','secular') %}
+        {% for opt, label in flavor_labels.items() %}
+          <option value="{{ opt }}" {% if opt==default %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </label>
+
+    <button class="primary" type="submit">Save Entry</button>
+  </form>
+</section>
+
+<section class="card">
+  <h3>Safety & Support</h3>
+
+  <!-- App settings -->
+  <form method="POST" action="{{ url_for('update_settings') }}" class="grid">
+    <label>Emergency banner text
+      <input
+        name="emergency_text"
+        value="{{ settings.get('emergency_text','') }}"
+        placeholder="If you are in immediate danger, contact local emergency services."
+        aria-label="Emergency banner text"
+      />
+    </label>
+
+    <label>Emergency contact label
+      <input
+        name="emergency_contact_label"
+        value="{{ settings.get('emergency_contact_label','') }}"
+        placeholder="Family / Friend / Counselor"
+        aria-label="Emergency contact label"
+      />
+    </label>
+
+    <label>Emergency contact value
+      <input
+        name="emergency_contact_value"
+        value="{{ settings.get('emergency_contact_value','') }}"
+        placeholder="+62-812-0000-0000"
+        aria-label="Emergency contact value"
+      />
+    </label>
+
+    <label>Default support flavor
+      <select name="default_support_flavor" aria-label="Default support flavor">
+        {% for opt, label in flavor_labels.items() %}
+          <option value="{{ opt }}" {% if opt==settings.get('default_support_flavor','secular') %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </label>
+
+    <button type="submit">Save Settings</button>
+  </form>
+
+  <!-- Emergency banner preview -->
+  <div class="emergency" aria-live="polite">
+    <strong>{{ settings.get('emergency_text','') }}</strong>
+    {% if settings.get('emergency_contact_value') %}
+      <div>
+        Contact {{ settings.get('emergency_contact_label','') }}:
+        <a href="tel:{{ settings.get('emergency_contact_value') }}">{{ settings.get('emergency_contact_value') }}</a>
+      </div>
+    {% endif %}
+  </div>
+
+  <hr style="border:1px solid var(--border); opacity:0.4; margin:16px 0">
+
+  <!-- In-app editor: Wisdom quote -->
+  <h4>Add Wisdom Quote</h4>
+  <form method="POST" action="{{ url_for('add_wisdom') }}" class="grid">
+    <label>Text
+      <input name="wisdom_text" placeholder="e.g., This too shall pass." aria-label="Wisdom text"/>
+    </label>
+    <label>Author
+      <input name="wisdom_author" placeholder="e.g., Persian Proverb" aria-label="Wisdom author"/>
+    </label>
+    <label>Flavor
+      <select name="wisdom_flavor" aria-label="Wisdom flavor">
+        {% for opt, label in flavor_labels.items() %}
+          <option value="{{ opt }}">{{ label }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <button type="submit">Add Wisdom</button>
+  </form>
+
+  <!-- In-app editor: Scripture / Spiritual quote -->
+  <h4>Add Scripture / Spiritual Quote</h4>
+  <form method="POST" action="{{ url_for('add_scripture') }}" class="grid">
+    <label>Text (include reference)
+      <input name="scripture_text" placeholder="e.g., “Cast all your anxiety on Him...” (1 Peter 5:7)" aria-label="Scripture text"/>
+    </label>
+    <label>Flavor
+      <select name="scripture_flavor" aria-label="Scripture flavor">
+        {% for opt, label in flavor_labels.items() %}
+          <option value="{{ opt }}">{{ label }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <div></div>
+    <button type="submit">Add Scripture</button>
+  </form>
+</section>
+
+<!-- Mood slider color + dynamic description -->
+<style>
+  .range-colored { width: 100%; --percent: 50%; --track-bg: #3a3a3a; --mood-color: #4ade80; background: transparent; }
+  .range-colored::-webkit-slider-runnable-track { height: 6px; border-radius: 999px;
+    background: linear-gradient(to right, var(--mood-color) 0%, var(--mood-color) var(--percent),
+    var(--track-bg) var(--percent), var(--track-bg) 100%); }
+  .range-colored::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%; background: #fff; margin-top: -6px; border: 2px solid var(--mood-color); }
+  .range-colored::-moz-range-track { height: 6px; border-radius: 999px; background: var(--track-bg); }
+  .range-colored::-moz-range-progress { height: 6px; border-radius: 999px; background: var(--mood-color); }
+  .range-colored::-moz-range-thumb { width: 18px; height: 18px; border-radius: 50%; background: #fff; border: 2px solid var(--mood-color); }
+
+  /* Card hover and spacing */
+  .card { transition: transform 0.15s ease, box-shadow 0.15s ease; margin-bottom: 20px; }
+  .card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+</style>
+
+<script>
+  function moodBucket(v) {
+    v = Number(v);
+    if (v <= 1) return {desc:"Crisis-level, overwhelming distress", color:"#ef4444", example:"— e.g., “I feel like I can’t cope at all.”"};
+    if (v <= 3) return {desc:"Very low, sad/anxious, hard to function", color:"#f87171", example:"— e.g., “I’m dragging myself through the day.”"};
+    if (v === 4) return {desc:"Low, struggling but moving", color:"#f59e0b", example:"— e.g., “I can function, but it feels heavy.”"};
+    if (v <= 6) return {desc:"Neutral / okay", color:"#facc15", example:"— e.g., “I feel flat but I’m managing.”"};
+    if (v <= 8) return {desc:"Good, positive, hopeful", color:"#4ade80", example:"— e.g., “I feel like things are going well.”"};
+    return {desc:"Excellent, joyful, energized", color:"#22c55e", example:"— e.g., “I feel on top of the world.”"};
+  }
+  function updateMoodUI(inputEl) {
+    const v = Number(inputEl.value);
+    const bucket = moodBucket(v);
+    const percent = (v / 10) * 100;
+    document.getElementById('moodval').textContent = v.toString();
+    document.getElementById('mooddesc').textContent = bucket.desc;
+    document.getElementById('moodexample').textContent = " " + bucket.example;
+    inputEl.style.setProperty('--percent', percent + '%');
+    inputEl.style.setProperty('--mood-color', bucket.color);
+  }
+  function toggleMoodInfo() {
+    const el = document.getElementById('mood-info');
+    const hidden = el.classList.toggle('hidden');
+    const btn = document.querySelector('button[aria-controls="mood-info"]');
+    if (btn) btn.setAttribute('aria-expanded', String(!hidden));
+  }
+  document.addEventListener('DOMContentLoaded', function () {
+    const slider = document.getElementById('mood');
+    updateMoodUI(slider);
+  });
+</script>
+
+{% endblock %}
+
+{% block extra_footer %}
+<div class="breath-text">
+  <p>🌿 Take a slow breath in… hold… and out. Repeat 3 times before you continue.</p>
+</div>
+<style>
+  .breath-text { text-align: center; margin: 24px auto; font-size: 1rem; opacity: 0.85; }
+  .breath-text p { margin: 0; padding: 8px 12px; background: rgba(255,255,255,0.05); border-radius: 8px; display: inline-block; transition: background 0.3s ease; }
+  .breath-text p:hover { background: rgba(255,255,255,0.12); }
+</style>
+{% endblock %}

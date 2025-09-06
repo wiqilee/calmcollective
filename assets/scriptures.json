@@ -1,0 +1,50 @@
+{
+  "islam": [
+    "“Surely, in the remembrance of Allah do hearts find rest.” (Qur’an 13:28)",
+    "“Allah does not burden a soul beyond what it can bear.” (Qur’an 2:286)",
+    "“So verily, with hardship comes ease.” (Qur’an 94:6)",
+    "“Indeed, Allah is with the patient.” (Qur’an 2:153)",
+    "“And He found you lost and guided you.” (Qur’an 93:7)",
+    "“Do not despair of the mercy of Allah.” (Qur’an 39:53)"
+  ],
+  "christian": [
+    "“Come to me, all you who are weary and burdened, and I will give you rest.” (Matthew 11:28)",
+    "“Cast all your anxiety on Him because He cares for you.” (1 Peter 5:7)",
+    "“The Lord is my shepherd; I shall not want.” (Psalm 23:1)",
+    "“Be strong and courageous. Do not be afraid; for the Lord your God goes with you.” (Deuteronomy 31:6)",
+    "“I can do all things through Christ who strengthens me.” (Philippians 4:13)",
+    "“The peace of God, which surpasses all understanding, will guard your hearts.” (Philippians 4:7)"
+  ],
+  "hindu": [
+    "“A person can rise through the efforts of his own mind, or draw himself down in the same manner.” (Bhagavad Gita 6:5)",
+    "“Yoga is the journey of the self, through the self, to the self.” (Bhagavad Gita 6:20)",
+    "“Set thy heart upon thy work, but never on its reward.” (Bhagavad Gita 2:47)",
+    "“There is nothing lost or wasted in this life.” (Bhagavad Gita 2:40)",
+    "“The soul is eternal and cannot be destroyed.” (Bhagavad Gita 2:20)",
+    "“Perform your duty with determination, without attachment to results.” (Bhagavad Gita 3:19)"
+  ],
+  "buddhist": [
+    "“Peace comes from within. Do not seek it without.” (Dhammapada 33)",
+    "“You yourself, as much as anybody in the entire universe, deserve your love and affection.” (Metta Sutta)",
+    "“Do not dwell in the past, do not dream of the future, concentrate the mind on the present moment.” (Dhammapada)",
+    "“Hatred does not cease by hatred, but only by love.” (Dhammapada 5)",
+    "“Health is the greatest gift, contentment the greatest wealth.” (Dhammapada 204)",
+    "“Better than a thousand hollow words is one word that brings peace.” (Dhammapada 100)"
+  ],
+  "cultural_nusantara": [
+    "“Shared burdens grow lighter, shared joys grow brighter.” (Indonesian Proverb)",
+    "“Slow and steady will get it done.” (Javanese Proverb)",
+    "“Where there is unity, there is strength.” (Indonesian Proverb)",
+    "“Even a mountain can be moved with cooperation.” (Indonesian Proverb)",
+    "“Harmony in the village brings peace to the land.” (Sundanese Saying)",
+    "“Respect for elders, care for the young, balance for the community.” (Bugis Saying)"
+  ],
+  "secular": [
+    "“One day at a time.” (Traditional Saying)",
+    "“This too shall pass.” (Persian Proverb)",
+    "“Every storm runs out of rain.” (Traditional Saying)",
+    "“Tough times never last, but tough people do.” (Robert H. Schuller)",
+    "“Keep going, nothing is permanent.” (Traditional Saying)",
+    "“Stars can’t shine without darkness.” (Traditional Saying)"
+  ]
+}

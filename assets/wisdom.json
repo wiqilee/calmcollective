@@ -1,0 +1,74 @@
+{
+  "secular": [
+    { "text": "One small step is still a step.", "author": "Unknown" },
+    { "text": "This too shall pass.", "author": "Persian Proverb" },
+    { "text": "Rest is productive when it helps you continue.", "author": "Traditional Saying" },
+    { "text": "Progress is better than perfection.", "author": "Traditional Saying" },
+    { "text": "Asking for help shows strength, not weakness.", "author": "Traditional Saying" },
+    { "text": "Every day is a fresh start.", "author": "Unknown" },
+    { "text": "Even slow growth is still growth.", "author": "Unknown" },
+    { "text": "Small consistent actions lead to big change.", "author": "Unknown" },
+    { "text": "Kindness costs nothing but means everything.", "author": "Unknown" },
+    { "text": "Your pace doesn’t matter, forward is forward.", "author": "Unknown" }
+  ],
+  "cultural_nusantara": [
+    { "text": "Little by little, a small pile becomes a hill.", "author": "Indonesian Proverb" },
+    { "text": "Slow and steady gets it done.", "author": "Javanese Proverb" },
+    { "text": "Shared burdens grow lighter; shared ease grows greater.", "author": "Indonesian Proverb" },
+    { "text": "Unity brings strength, harmony brings peace.", "author": "Indonesian Saying" },
+    { "text": "Strong roots keep the tree standing tall.", "author": "Minangkabau Saying" },
+    { "text": "A calm sea never made a skilled sailor.", "author": "Malay Proverb" },
+    { "text": "Even the tallest tree starts from a seed.", "author": "Indonesian Proverb" },
+    { "text": "Work together, eat together, live together.", "author": "Sundanese Saying" },
+    { "text": "Patience is like rice: it grows in silence.", "author": "Balinese Saying" },
+    { "text": "Respect for elders is the wealth of the young.", "author": "Bugis Proverb" }
+  ],
+  "islam": [
+    { "text": "Caring for yourself is part of keeping a trust.", "author": "Traditional Saying" },
+    { "text": "Gratitude turns what you have into enough.", "author": "Traditional Saying" },
+    { "text": "Begin with a calm breath; steady steps will follow.", "author": "Traditional Saying" },
+    { "text": "Seeking help is wisdom, not weakness.", "author": "Traditional Saying" },
+    { "text": "Patience is the key to relief.", "author": "Traditional Saying" },
+    { "text": "Trust in Allah, but tie your camel.", "author": "Prophetic Saying" },
+    { "text": "Forgiveness is greater than revenge.", "author": "Traditional Saying" },
+    { "text": "Hope is a light that never fades for the believer.", "author": "Traditional Saying" },
+    { "text": "Dua is the weapon of the believer.", "author": "Hadith" },
+    { "text": "Mercy to others brings mercy from Allah.", "author": "Hadith" }
+  ],
+  "christian": [
+    { "text": "Bring your worries into the light; share the load with others.", "author": "Traditional Saying" },
+    { "text": "Grace meets you where you are; start small today.", "author": "Traditional Saying" },
+    { "text": "Rest is part of the journey, not a detour.", "author": "Traditional Saying" },
+    { "text": "Hope grows stronger when shared.", "author": "Traditional Saying" },
+    { "text": "Love one another as I have loved you.", "author": "John 15:12" },
+    { "text": "Faith as small as a mustard seed can move mountains.", "author": "Matthew 17:20" },
+    { "text": "Peace I leave with you; my peace I give you.", "author": "John 14:27" },
+    { "text": "Do not grow weary in doing good.", "author": "Galatians 6:9" },
+    { "text": "Joy comes in the morning.", "author": "Psalm 30:5" },
+    { "text": "God is our refuge and strength, ever-present help in trouble.", "author": "Psalm 46:1" }
+  ],
+  "hindu": [
+    { "text": "Steady breath, steady mind; act on one small value now.", "author": "Traditional Teaching" },
+    { "text": "You are not your passing thoughts—watch them and let them go.", "author": "Traditional Teaching" },
+    { "text": "Every action done with care is a step toward harmony.", "author": "Traditional Teaching" },
+    { "text": "When the mind is pure, joy follows like a shadow.", "author": "Dhammapada" },
+    { "text": "Truth alone triumphs.", "author": "Mundaka Upanishad" },
+    { "text": "Self-control is the key to true freedom.", "author": "Bhagavad Gita" },
+    { "text": "The soul is neither born nor dies.", "author": "Bhagavad Gita" },
+    { "text": "Act without attachment, find peace in action.", "author": "Bhagavad Gita" },
+    { "text": "Compassion is the root of dharma.", "author": "Traditional Teaching" },
+    { "text": "Inner peace is victory over the self.", "author": "Traditional Teaching" }
+  ],
+  "buddhist": [
+    { "text": "Let thoughts pass like clouds across the sky.", "author": "Traditional Teaching" },
+    { "text": "One mindful breath can change the moment.", "author": "Traditional Teaching" },
+    { "text": "Be gentle: suffering eases when met with kindness.", "author": "Traditional Teaching" },
+    { "text": "Peace begins with a single moment of awareness.", "author": "Traditional Teaching" },
+    { "text": "Hatred never ends by hatred, only by love.", "author": "Dhammapada" },
+    { "text": "Mind is everything; what you think, you become.", "author": "Dhammapada" },
+    { "text": "Thousands of candles can be lit from a single candle.", "author": "Buddha" },
+    { "text": "Health is the greatest gift, contentment the greatest wealth.", "author": "Buddha" },
+    { "text": "Better than a thousand hollow words is one that brings peace.", "author": "Buddha" },
+    { "text": "Compassion is the highest form of wisdom.", "author": "Traditional Teaching" }
+  ]
+}

@@ -1,0 +1,49 @@
+{% extends "layout.html" %}
+{% block content %}
+<section class="card">
+  <h2>Export Your Data</h2>
+  <p>You can export your journal entries any time. Data is stored locally on your computer.</p>
+
+  <div class="export-actions" style="display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin:10px 0 16px;">
+    <a class="primary" href="{{ url_for('export_json') }}">Export JSON</a>
+    <a class="secondary" href="{{ url_for('export_csv') }}">Export CSV</a>
+
+    <!-- Carry over filters (if any) to Export PDF link -->
+    <a
+      class="secondary"
+      href="{{ url_for('export_pdf',
+                       flavor=request.args.get('flavor'),
+                       start=request.args.get('start'),
+                       end=request.args.get('end')) }}"
+    >Export PDF</a>
+
+    <a class="secondary" href="{{ url_for('api_entries') }}" target="_blank" rel="noopener">Open JSON in browser</a>
+  </div>
+
+  <!-- Optional: quick filter form for PDF export -->
+  <form method="GET" action="{{ url_for('export_pdf') }}" class="filter-bar" style="display:flex; gap:10px; flex-wrap:wrap; align-items:end;">
+    <label style="display:flex; flex-direction:column; gap:6px;">
+      <span>Flavor</span>
+      <select name="flavor">
+        <option value="">All</option>
+        {% for key, label in flavor_labels.items() %}
+          {% set cur = request.args.get('flavor','') %}
+          <option value="{{ key }}" {% if cur==key %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </label>
+
+    <label style="display:flex; flex-direction:column; gap:6px;">
+      <span>Start date</span>
+      <input type="date" name="start" value="{{ request.args.get('start','') }}">
+    </label>
+
+    <label style="display:flex; flex-direction:column; gap:6px;">
+      <span>End date</span>
+      <input type="date" name="end" value="{{ request.args.get('end','') }}">
+    </label>
+
+    <button type="submit" class="secondary">Export PDF with filters</button>
+  </form>
+</section>
+{% endblock %}

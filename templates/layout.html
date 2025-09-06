@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ app_name }} — Gentle Self-Care</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+  <link rel="manifest" href="{{ url_for('webmanifest') }}">
+</head>
+<body>
+  <header class="container">
+    <h1>{{ app_name }}</h1>
+    <nav>
+      <a href="{{ url_for('index') }}">Journal</a>
+      <a href="{{ url_for('entries') }}">Entries</a>
+      <a href="{{ url_for('export_page') }}">Export</a>
+      <a href="https://twitter.com/wiqi_lee" target="_blank" rel="noopener">by @wiqi_lee</a>
+    </nav>
+  </header>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+  <div class="container flashes">
+    {% for category, message in messages %}
+      <div class="flash {{ category }}">{{ message }}</div>
+    {% endfor %}
+  </div>
+  {% endif %}
+  {% endwith %}
+
+  <main class="container">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="container footer">
+    <div class="disclaimer">
+      <strong>Disclaimer:</strong> This app is a self-care tool. It does not provide medical advice and is not a substitute for professional help.
+      If you are in crisis, contact local emergency services or a trusted person immediately.
+    </div>
+  </footer>
+
+  {% block extra_footer %}{% endblock %}
+
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register("{{ url_for('service_worker') }}")
+        .catch(err => console.error('SW registration failed:', err));
+    }
+  </script>
+</body>
+</html>

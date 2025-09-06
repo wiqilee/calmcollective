@@ -1,0 +1,25 @@
+{
+    "name": "CalmCollective — Gentle Self-Care",
+    "short_name": "CalmCollective",
+    "description": "A gentle, offline-friendly journaling app with mood tracking and supportive wisdom.",
+    "start_url": "/",
+    "scope": "/",
+    "display": "standalone",
+    "background_color": "#0b0e11",
+    "theme_color": "#0b0e11",
+    "icons": [
+      {
+        "src": "/static/icons/icon-192.png",
+        "sizes": "192x192",
+        "type": "image/png",
+        "purpose": "any maskable"
+      },
+      {
+        "src": "/static/icons/icon-512.png",
+        "sizes": "512x512",
+        "type": "image/png",
+        "purpose": "any maskable"
+      }
+    ]
+  }
+  

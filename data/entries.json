@@ -1,0 +1,147 @@
+[
+  {
+    "timestamp": "2025-09-05T19:08:06",
+    "text": "I am very sad",
+    "mood_slider": 0.0,
+    "flavor": "secular",
+    "analysis": {
+      "tokens": [
+        "i",
+        "am",
+        "very",
+        "sad"
+      ],
+      "positive": 0,
+      "negative": 1,
+      "mood_score": -1.0,
+      "signals": {
+        "stress": false,
+        "sadness": true,
+        "anger": false,
+        "lonely": false,
+        "anxiety": false,
+        "crisis": false
+      }
+    },
+    "support": [
+      "Breathing — 4‑6: Inhale 4s through the nose, exhale 6s through the mouth. Repeat 6 rounds.",
+      "Behavioral activation: Do one tiny valued action now (stand up, drink water, open a window, put one cup away).",
+      "Self‑compassion: Place a hand on your chest and say, ‘This is hard, and I’m doing my best. May I be kind to myself right now.’"
+    ],
+    "quote": "One small step is still a step.",
+    "spiritual": "“One day at a time.”",
+    "wisdom": {
+      "text": "One small step is still a step.",
+      "author": "Unknown"
+    }
+  },
+  {
+    "timestamp": "2025-09-05T19:44:03",
+    "text": "I am very sad",
+    "mood_slider": 1.0,
+    "flavor": "secular",
+    "analysis": {
+      "tokens": [
+        "i",
+        "am",
+        "very",
+        "sad"
+      ],
+      "positive": 0,
+      "negative": 1,
+      "mood_score": -1.0,
+      "signals": {
+        "stress": false,
+        "sadness": true,
+        "anger": false,
+        "lonely": false,
+        "anxiety": false,
+        "crisis": false
+      }
+    },
+    "support": [
+      "Breathing — 4‑6: Inhale 4s through the nose, exhale 6s through the mouth. Repeat 6 rounds.",
+      "Behavioral activation: Do one tiny valued action now (stand up, drink water, open a window, put one cup away).",
+      "Self‑compassion: Place a hand on your chest and say, ‘This is hard, and I’m doing my best. May I be kind to myself right now.’"
+    ],
+    "quote": "One small step is still a step.",
+    "spiritual": "“One day at a time.”",
+    "wisdom": {
+      "text": "One small step is still a step.",
+      "author": "Unknown"
+    }
+  },
+  {
+    "timestamp": "2025-09-05T19:45:07",
+    "text": "I am very sad",
+    "mood_slider": 5.0,
+    "flavor": "secular",
+    "analysis": {
+      "tokens": [
+        "i",
+        "am",
+        "very",
+        "sad"
+      ],
+      "positive": 0,
+      "negative": 1,
+      "mood_score": -1.0,
+      "signals": {
+        "stress": false,
+        "sadness": true,
+        "anger": false,
+        "lonely": false,
+        "anxiety": false,
+        "crisis": false
+      }
+    },
+    "support": [
+      "Breathing — 4‑6: Inhale 4s through the nose, exhale 6s through the mouth. Repeat 6 rounds.",
+      "Behavioral activation: Do one tiny valued action now (stand up, drink water, open a window, put one cup away).",
+      "Self‑compassion: Place a hand on your chest and say, ‘This is hard, and I’m doing my best. May I be kind to myself right now.’"
+    ],
+    "quote": "One small step is still a step.",
+    "spiritual": "“One day at a time.”",
+    "wisdom": {
+      "text": "One small step is still a step.",
+      "author": "Unknown"
+    }
+  },
+  {
+    "timestamp": "2025-09-06T09:27:18",
+    "text": "I am very sad",
+    "mood_slider": 1.0,
+    "flavor": "secular",
+    "analysis": {
+      "tokens": [
+        "i",
+        "am",
+        "very",
+        "sad"
+      ],
+      "positive": 0,
+      "negative": 1,
+      "mood_score": -1.0,
+      "signals": {
+        "stress": false,
+        "sadness": true,
+        "anger": false,
+        "lonely": false,
+        "anxiety": false,
+        "crisis": false
+      }
+    },
+    "support": [
+      "Self‑compassion: Place a hand on your chest and say, ‘This is hard, and I’m doing my best. May I be kind to myself right now.’",
+      "Breathing — 4‑6: Inhale 4s through the nose, exhale 6s through the mouth. Repeat 6 rounds.",
+      "Grounding: name 5 things you see, 4 you feel, 3 you hear, 2 you smell, 1 you taste.",
+      "Behavioral activation: Do one tiny valued action now (stand up, drink water, open a window, put one cup away)."
+    ],
+    "quote": "You don’t have to do this alone. Reaching out is strength.",
+    "spiritual": "“This too shall pass.” (Persian Proverb)",
+    "wisdom": {
+      "text": "Asking for help shows strength, not weakness.",
+      "author": "Traditional Saying"
+    }
+  }
+]
