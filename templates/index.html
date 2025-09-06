@@ -5,6 +5,9 @@
   <h2>How are you feeling right now?</h2>
 
   <form method="POST" action="{{ url_for('journal') }}" class="grid">
+    <!-- CSRF -->
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
     <!-- Journal text -->
     <label>Your words
       <textarea
@@ -75,6 +78,9 @@
 
   <!-- App settings -->
   <form method="POST" action="{{ url_for('update_settings') }}" class="grid">
+    <!-- CSRF -->
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
     <label>Emergency banner text
       <input
         name="emergency_text"
@@ -97,7 +103,7 @@
       <input
         name="emergency_contact_value"
         value="{{ settings.get('emergency_contact_value','') }}"
-        placeholder="+44 pssstt psssttt"
+        placeholder="+62-812-0000-0000"
         aria-label="Emergency contact value"
       />
     </label>
@@ -129,6 +135,9 @@
   <!-- In-app editor: Wisdom quote -->
   <h4>Add Wisdom Quote</h4>
   <form method="POST" action="{{ url_for('add_wisdom') }}" class="grid">
+    <!-- CSRF -->
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
     <label>Text
       <input name="wisdom_text" placeholder="e.g., This too shall pass." aria-label="Wisdom text"/>
     </label>
@@ -148,6 +157,9 @@
   <!-- In-app editor: Scripture / Spiritual quote -->
   <h4>Add Scripture / Spiritual Quote</h4>
   <form method="POST" action="{{ url_for('add_scripture') }}" class="grid">
+    <!-- CSRF -->
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
     <label>Text (include reference)
       <input name="scripture_text" placeholder="e.g., “Cast all your anxiety on Him...” (1 Peter 5:7)" aria-label="Scripture text"/>
     </label>
