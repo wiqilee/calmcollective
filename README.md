@@ -1,3 +1,4 @@
+
 # CalmCollective — Local & Inclusive Mental Health AI (MVP)
 
 _By Wiqi Lee — Twitter: [@wiqi_lee](https://twitter.com/wiqi_lee)_
@@ -127,20 +128,22 @@ The suggestions are inspired by common psychoeducation frameworks:
 ---
 
 ## ➕ Add Your Own Wisdom
-Edit `assets/wisdom.json`. Each entry must have `text` and `author`:
+You can expand or personalize the supportive wisdom pool by editing `assets/wisdom.json`.  
+Each entry must include a `text` and an `author`, organized under its category (secular, cultural_nusantara, islam, christian, hindu, buddhist).  
 
+Example:
 ```json
 {
-  "islam": [
-    { "text": "Sabar itu indah.", "author": "Ulama" }
-  ],
   "secular": [
-    { "text": "Keep going, keep growing.", "author": "Unknown" }
+    { "text": "Even slow growth is still growth.", "author": "Unknown" }
+  ],
+  "islam": [
+    { "text": "Patience is the key to relief.", "author": "Traditional Saying" }
   ]
 }
 ```
 
-The app will automatically use the matching **support flavor**, or fall back to `secular`.
+The app automatically matches the user’s chosen **support flavor**, and falls back to `secular` if none is found.
 
 ---
 
