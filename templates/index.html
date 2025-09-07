@@ -6,7 +6,7 @@
 
   <form method="POST" action="{{ url_for('journal') }}" class="grid">
     <!-- CSRF -->
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
 
     <!-- Journal text -->
     <label>Your words
@@ -79,7 +79,7 @@
   <!-- App settings -->
   <form method="POST" action="{{ url_for('update_settings') }}" class="grid">
     <!-- CSRF -->
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
 
     <label>Emergency banner text
       <input
@@ -136,7 +136,7 @@
   <h4>Add Wisdom Quote</h4>
   <form method="POST" action="{{ url_for('add_wisdom') }}" class="grid">
     <!-- CSRF -->
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
 
     <label>Text
       <input name="wisdom_text" placeholder="e.g., This too shall pass." aria-label="Wisdom text"/>
@@ -158,7 +158,7 @@
   <h4>Add Scripture / Spiritual Quote</h4>
   <form method="POST" action="{{ url_for('add_scripture') }}" class="grid">
     <!-- CSRF -->
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
 
     <label>Text (include reference)
       <input name="scripture_text" placeholder="e.g., “Cast all your anxiety on Him...” (1 Peter 5:7)" aria-label="Scripture text"/>
@@ -186,7 +186,6 @@
   .range-colored::-moz-range-progress { height: 6px; border-radius: 999px; background: var(--mood-color); }
   .range-colored::-moz-range-thumb { width: 18px; height: 18px; border-radius: 50%; background: #fff; border: 2px solid var(--mood-color); }
 
-  /* Card hover and spacing */
   .card { transition: transform 0.15s ease, box-shadow 0.15s ease; margin-bottom: 20px; }
   .card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
 </style>

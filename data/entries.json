@@ -143,5 +143,38 @@
       "text": "Asking for help shows strength, not weakness.",
       "author": "Traditional Saying"
     }
+  },
+  {
+    "timestamp": "2025-09-07T09:55:52",
+    "text": "sad",
+    "mood_slider": 0.0,
+    "flavor": "secular",
+    "analysis": {
+      "tokens": [
+        "sad"
+      ],
+      "positive": 0,
+      "negative": 1,
+      "mood_score": -1,
+      "signals": {
+        "stress": false,
+        "sadness": true,
+        "anger": false,
+        "lonely": false,
+        "anxiety": false,
+        "crisis": false
+      }
+    },
+    "support": [
+      "If you feel unsafe or overwhelmed, consider reaching out to a trusted person or local helpline.",
+      "Try 5-4-3-2-1 grounding: 5 see, 4 touch, 3 hear, 2 smell, 1 taste.",
+      "Place a hand on your chest and say: ‘This is hard, and I’m doing my best.’"
+    ],
+    "quote": "Keep going—your future self will thank you.",
+    "spiritual": "“One day at a time.” (Traditional Saying)",
+    "wisdom": {
+      "text": "Even slow growth is still growth.",
+      "author": "Unknown"
+    }
   }
 ]

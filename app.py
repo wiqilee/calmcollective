@@ -7,8 +7,12 @@ import random
 from io import StringIO, BytesIO
 from datetime import datetime, timedelta
 from typing import List, Dict, Optional
-from flask import Flask, render_template, request, redirect, url_for, jsonify, flash, send_file
-from flask_wtf.csrf import CSRFProtect   # CSRF
+
+from flask import (
+    Flask, render_template, request, redirect, url_for,
+    jsonify, flash, send_file, make_response
+)
+from flask_wtf.csrf import CSRFProtect, CSRFError
 
 # --- PDF (ReportLab) ---
 from reportlab.lib.pagesizes import A4
@@ -41,20 +45,18 @@ FLAVOR_LABELS: Dict[str, str] = {
 }
 
 app = Flask(__name__)
-app.secret_key = "dev-key-change-me"  # For flash messages
 
-# ---------- Security ----------
+# ===== DEV-FRIENDLY SECURITY SETTINGS =====
+app.secret_key = os.getenv("SECRET_KEY", "dev-key-change-me")
+app.config["WTF_CSRF_TIME_LIMIT"] = None  # dev: do not expire within session
+app.config["WTF_CSRF_ENABLED"] = os.getenv("WTF_CSRF_ENABLED", "1") not in ("0", "false", "False")
+app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+app.config["SESSION_COOKIE_SECURE"] = False
 csrf = CSRFProtect(app)
+# ==========================================
 
-# Make flavor_labels available in ALL templates
-@app.context_processor
-def inject_globals():
-    return {
-        "flavor_labels": FLAVOR_LABELS,
-        "flavor_label": lambda key: FLAVOR_LABELS.get(key, key),
-    }
 
-# ---------- Utilities ----------
+# ---------- Helpers: JSON I/O ----------
 def load_json(path, default):
     try:
         with open(path, "r", encoding="utf-8") as f:
@@ -62,37 +64,47 @@ def load_json(path, default):
     except Exception:
         return default
 
+
 def save_json(path, data):
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
 
+
 def ensure_files():
     os.makedirs(DATA_DIR, exist_ok=True)
-    for p, d in [(ENTRIES_PATH, []), (SETTINGS_PATH, {})]:
-        if not os.path.exists(p):
-            save_json(p, d)
+    if not os.path.exists(ENTRIES_PATH):
+        save_json(ENTRIES_PATH, [])
+    if not os.path.exists(SETTINGS_PATH):
+        save_json(SETTINGS_PATH, {
+            "emergency_text": "If you are in immediate danger, contact local emergency services.",
+            "emergency_contact_label": "Family",
+            "emergency_contact_value": "",
+            "default_support_flavor": "secular",
+        })
+
 
 def _append_to_map_list(path: str, flavor: str, item):
-    """Append an item to a flavor list inside a JSON map file (create if missing)."""
     m = load_json(path, {})
     if flavor not in m or not isinstance(m[flavor], list):
         m[flavor] = []
     m[flavor].append(item)
     save_json(path, m)
 
+
 def _last_entry() -> Optional[Dict]:
     entries: List[Dict] = load_json(ENTRIES_PATH, [])
     return entries[-1] if entries else None
 
+
 def _pick_variant(options: List, last_value):
-    """Pick a random item from options, trying not to repeat the previous selection."""
     if not options:
         return None
     if last_value in options and len(options) > 1:
         pool = [o for o in options if o != last_value]
         return random.choice(pool)
     return random.choice(options)
+
 
 def _same_wisdom(a, b) -> bool:
     return (
@@ -101,8 +113,8 @@ def _same_wisdom(a, b) -> bool:
         and a.get("author") == b.get("author")
     )
 
+
 def _parse_date_yyyy_mm_dd(s: Optional[str]) -> Optional[datetime]:
-    """Parse 'YYYY-MM-DD' -> datetime (naive). Return None if invalid/empty."""
     if not s:
         return None
     try:
@@ -110,8 +122,8 @@ def _parse_date_yyyy_mm_dd(s: Optional[str]) -> Optional[datetime]:
     except Exception:
         return None
 
+
 def _parse_entry_ts(e: Dict) -> Optional[datetime]:
-    """Entries store timestamp like '2025-09-05T12:34:56'. Parse safely."""
     ts = e.get("timestamp")
     if not ts:
         return None
@@ -121,23 +133,19 @@ def _parse_entry_ts(e: Dict) -> Optional[datetime]:
     except Exception:
         return None
 
+
 def _filter_entries(entries: List[Dict], flavor: Optional[str], start: Optional[str], end: Optional[str]) -> List[Dict]:
-    """Filter by flavor and inclusive date range [start, end]. Dates are in local naive time."""
+    """Filter by flavor and inclusive date range [start, end]."""
     f = (flavor or "").strip().lower()
     start_dt = _parse_date_yyyy_mm_dd(start)
     end_dt = _parse_date_yyyy_mm_dd(end)
-
-    # Normalize end to end-of-day if provided
     if end_dt:
         end_dt = end_dt + timedelta(days=1) - timedelta(seconds=1)
 
     out = []
     for e in entries:
-        # flavor filter
         if f and f != "all" and e.get("flavor") != f:
             continue
-
-        # date filter
         if start_dt or end_dt:
             et = _parse_entry_ts(e)
             if not et:
@@ -146,19 +154,16 @@ def _filter_entries(entries: List[Dict], flavor: Optional[str], start: Optional[
                 continue
             if end_dt and et > end_dt:
                 continue
-
         out.append(e)
     return out
 
+
 def _fmt_entry_ts(e: Dict) -> str:
-    """Format entry timestamp -> 'YYYY-MM-DD HH:MM' (fallback to raw)."""
     dt = _parse_entry_ts(e)
     return dt.strftime("%Y-%m-%d %H:%M") if dt else (e.get("timestamp", "") or "")
 
+
 def _wrap_text_by_width(text: str, c: pdfcanvas.Canvas, max_width_pt: float, font_name: str = "Helvetica", font_size: int = 10) -> List[str]:
-    """
-    Wrap text into lines that fit within max_width using the current canvas font metrics.
-    """
     if not text:
         return []
     words = text.replace("\r", "").split()
@@ -171,7 +176,6 @@ def _wrap_text_by_width(text: str, c: pdfcanvas.Canvas, max_width_pt: float, fon
         else:
             if current:
                 lines.append(current)
-            # If a single word itself is longer than width, hard-split it
             if c.stringWidth(w, font_name, font_size) > max_width_pt:
                 buf = ""
                 for ch in w:
@@ -188,17 +192,16 @@ def _wrap_text_by_width(text: str, c: pdfcanvas.Canvas, max_width_pt: float, fon
         lines.append(current)
     return lines
 
-# ---------- Support message crafting (psych-informed) ----------
+
+# ---------- Psych-informed support messages ----------
 def _craft_support_messages(text: str, analysis: Dict, mood: float) -> List[str]:
     """
     Produce up to 2 brief, compassionate, and actionable suggestions.
-    Uses mood, simple keyword cues in text, and micro_interventions() as a pool.
     """
     t = (text or "").lower()
     pos = int(analysis.get("positive", 0) or 0)
     neg = int(analysis.get("negative", 0) or 0)
 
-    # Base micro-interventions pool (from utils) + curated short actions
     pool = (micro_interventions(analysis) or []) + [
         "Take 6 slow breaths: inhale 4s through your nose, exhale 6s. Notice your shoulders drop.",
         "Try 5-4-3-2-1 grounding: 5 see, 4 touch, 3 hear, 2 smell, 1 taste.",
@@ -208,7 +211,6 @@ def _craft_support_messages(text: str, analysis: Dict, mood: float) -> List[str]
         "Write down one thing that is within your control for the next hour."
     ]
 
-    # Gentle prioritization based on cues in text
     keyword_sets = [
         ({"panic", "cemas", "anxious", "anxiety", "overwhelmed"}, [
             "Take 6 slow breaths: inhale 4s through your nose, exhale 6s. Notice your shoulders drop.",
@@ -237,20 +239,16 @@ def _craft_support_messages(text: str, analysis: Dict, mood: float) -> List[str]
         if any(k in t for k in keys):
             prioritized.extend(suggestions)
 
-    # If strong negative tilt, lean to grounding + self-compassion
     if neg >= max(1, pos * 2):
         prioritized.extend([
             "Try 5-4-3-2-1 grounding: 5 see, 4 touch, 3 hear, 2 smell, 1 taste.",
             "Place a hand on your chest and say: ‘This is hard, and I’m doing my best.’",
         ])
 
-    # Crisis tip when mood extremely low (kept short, non-alarming)
     crisis_tip = None
     if mood <= 2:
         crisis_tip = "If you feel unsafe or overwhelmed, consider reaching out to a trusted person or local helpline."
 
-    # Build final list: crisis (if any) + two concise actions
-    # De-duplicate while preserving order
     seen = set()
     ordered = []
     for s in ([crisis_tip] if crisis_tip else []) + prioritized + pool:
@@ -263,25 +261,53 @@ def _craft_support_messages(text: str, analysis: Dict, mood: float) -> List[str]
 
     return ordered[:2] if not crisis_tip else [ordered[0]] + ordered[1:3]
 
+
+# ---------- Global template context ----------
+@app.context_processor
+def inject_globals():
+    return {
+        "flavor_labels": FLAVOR_LABELS,
+        "flavor_label": lambda key: FLAVOR_LABELS.get(key, key),
+    }
+
+
+# ---------- CSRF: friendly error + no-store on HTML ----------
+@app.errorhandler(CSRFError)
+def handle_csrf_error(e):
+    flash("Your form session expired or the CSRF token was missing. Please try again.", "error")
+    return redirect(url_for("index")), 302
+
+
+@app.after_request
+def add_no_store(resp):
+    """Avoid cached HTML serving stale CSRF tokens."""
+    content_type = resp.headers.get("Content-Type", "")
+    if content_type.startswith("text/html"):
+        resp.headers["Cache-Control"] = "no-store, max-age=0"
+        resp.headers["Pragma"] = "no-cache"
+        resp.headers["Expires"] = "0"
+    return resp
+
+
 # ---------- Routes ----------
 @app.route("/")
 def index():
     ensure_files()
     settings = load_json(SETTINGS_PATH, {})
     prompts = load_json(PROMPTS_PATH, [])
-    # Rotate the prompt for variety
     prompt_text = random.choice(prompts) if isinstance(prompts, list) and prompts else "How are you feeling right now?"
-    return render_template(
-        "index.html",
-        app_name=APP_NAME,
-        settings=settings,
-        prompt=prompt_text,
-    )
+    return render_template("index.html", app_name=APP_NAME, settings=settings, prompt=prompt_text)
+
+
+@app.get("/journal")
+def journal_get_redirect():
+    return redirect(url_for("index"))
+
 
 @app.post("/journal")
 def journal():
     ensure_files()
-    text = request.form.get("entry_text", "").strip()
+    text = (request.form.get("entry_text") or "").strip()
     try:
         mood = float(request.form.get("mood", "0"))
     except ValueError:
@@ -293,8 +319,6 @@ def journal():
         return redirect(url_for("index"))
 
     analysis = analyze_text(text)
-
-    # --- Psych-informed, concise suggestions (max 2) ---
     support = _craft_support_messages(text, analysis, mood)
 
     quotes_map = load_json(QUOTES_PATH, {})
@@ -303,17 +327,14 @@ def journal():
 
     last = _last_entry()
 
-    # Spiritual note
     spiritual_candidates = scriptures_map.get(flavor) or scriptures_map.get("secular") or []
     last_spiritual = last.get("spiritual") if last else None
     spiritual = _pick_variant(spiritual_candidates, last_spiritual)
 
-    # Quote
     quote_candidates = quotes_map.get(flavor) or quotes_map.get("secular") or ["You are doing the best you can."]
     last_quote = last.get("quote") if last else None
     quote = _pick_variant(quote_candidates, last_quote)
 
-    # Wisdom
     wlist = wisdom_map.get(flavor) or wisdom_map.get("secular") or []
     last_wisdom = last.get("wisdom") if last else None
     if last_wisdom and wlist and any(_same_wisdom(last_wisdom, w) for w in wlist) and len(wlist) > 1:
@@ -340,19 +361,17 @@ def journal():
 
     return redirect(url_for("entries"))
 
+
 @app.get("/entries")
 def entries():
-    """
-    Render entries page with optional filters via query string:
-      /entries?flavor=secular&start=2025-09-01&end=2025-09-30
-    """
+    """Render entries page with optional filters."""
     ensure_files()
     all_entries: List[Dict] = load_json(ENTRIES_PATH, [])
     settings = load_json(SETTINGS_PATH, {})
 
     flavor = request.args.get("flavor", default="", type=str)
-    start  = request.args.get("start", default="", type=str)
-    end    = request.args.get("end", default="", type=str)
+    start = request.args.get("start", default="", type=str)
+    end = request.args.get("end", default="", type=str)
 
     filtered = _filter_entries(all_entries, flavor, start, end)
 
@@ -366,32 +385,61 @@ def entries():
         current_end=end or "",
     )
 
+
+# ---------- NEW: Delete a single entry by timestamp ----------
+@app.post("/entries/delete")
+def delete_entry():
+    """
+    Delete one journal entry identified by its timestamp string (exact match).
+    Expects form field: ts = 'YYYY-MM-DDTHH:MM:SS'
+    """
+    ensure_files()
+    ts = (request.form.get("ts") or "").strip()
+    if not ts:
+        flash("Missing entry identifier.", "error")
+        return redirect(url_for("entries"))
+
+    all_entries: List[Dict] = load_json(ENTRIES_PATH, [])
+    before = len(all_entries)
+    kept = [e for e in all_entries if (e.get("timestamp") or "").strip() != ts]
+    removed = before - len(kept)
+
+    if removed > 0:
+        save_json(ENTRIES_PATH, kept)
+        flash("Entry deleted.", "ok")
+    else:
+        flash("Entry not found (maybe already deleted).", "error")
+
+    return redirect(url_for("entries"))
+
+
 @app.get("/api/entries")
 def api_entries():
-    """
-    Return entries as JSON with optional filters and limit:
-      /api/entries?flavor=secular&start=2025-09-01&end=2025-09-30&limit=90
-    """
+    """Return entries as JSON with optional filters and limit."""
     ensure_files()
     all_entries: List[Dict] = load_json(ENTRIES_PATH, [])
 
     flavor = request.args.get("flavor", default="", type=str)
-    start  = request.args.get("start",  default="", type=str)
-    end    = request.args.get("end",    default="", type=str)
-    limit  = request.args.get("limit",  type=int)
+    start = request.args.get("start", default="", type=str)
+    end = request.args.get("end", default="", type=str)
+    limit = request.args.get("limit", type=int)
 
     filtered = _filter_entries(all_entries, flavor, start, end)
 
-    # If limit is set, keep only the most recent N
     if isinstance(limit, int) and limit > 0:
         filtered = filtered[-limit:]
 
-    return jsonify(filtered)
+    resp = make_response(json.dumps(filtered, ensure_ascii=False))
+    resp.mimetype = "application/json"
+    resp.headers["Cache-Control"] = "no-store, max-age=0"
+    return resp
+
 
 @app.get("/export")
 def export_page():
     ensure_files()
     return render_template("export.html", app_name=APP_NAME)
+
 
 @app.get("/export/json")
 def export_json():
@@ -401,6 +449,7 @@ def export_json():
         response=json.dumps(entries, ensure_ascii=False, indent=2),
         mimetype="application/json"
     )
+
 
 @app.get("/export/csv")
 def export_csv():
@@ -429,31 +478,25 @@ def export_csv():
     csv_data = sio.getvalue()
     return app.response_class(response=csv_data, mimetype="text/csv")
 
+
 @app.get("/export/pdf")
 def export_pdf():
-    """
-    Generate a PDF of entries with the same filters as /entries and /api/entries.
-      /export/pdf?flavor=secular&start=2025-09-01&end=2025-09-30
-    """
+    """Generate a PDF of entries with the same filters as /entries and /api/entries."""
     ensure_files()
     all_entries: List[Dict] = load_json(ENTRIES_PATH, [])
 
     flavor = request.args.get("flavor", default="", type=str)
-    start  = request.args.get("start",  default="", type=str)
-    end    = request.args.get("end",    default="", type=str)
+    start = request.args.get("start", default="", type=str)
+    end = request.args.get("end", default="", type=str)
 
     entries = _filter_entries(all_entries, flavor, start, end)
-
-    # Sort ascending by time for PDF readability
     entries.sort(key=lambda e: (_parse_entry_ts(e) or datetime.min))
 
-    # Prepare PDF in memory
     buffer = BytesIO()
     page_w, page_h = A4
     margin = 18 * mm
     c = pdfcanvas.Canvas(buffer, pagesize=A4)
 
-    # Header
     title = f"{APP_NAME} — Entries Export"
     subtitle_parts = []
     if flavor:
@@ -464,7 +507,6 @@ def export_pdf():
         subtitle_parts.append(f"End: {end}")
     subtitle = " | ".join(subtitle_parts) if subtitle_parts else "All entries"
 
-    # Text settings
     y = page_h - margin
     c.setTitle(f"{APP_NAME} Export")
     c.setAuthor(APP_NAME)
@@ -482,9 +524,8 @@ def export_pdf():
         y -= 10
 
     def ensure_space(lines_needed: int, line_height: int = 12):
-        """Start a new page if there isn't enough vertical space."""
         nonlocal y
-        min_y = margin + 20  # leave some bottom margin
+        min_y = margin + 20
         if y - (lines_needed * line_height) < min_y:
             c.showPage()
             y = page_h - margin
@@ -498,10 +539,8 @@ def export_pdf():
         c.showPage()
         c.save()
         buffer.seek(0)
-        filename = "entries.pdf"
-        return send_file(buffer, mimetype="application/pdf", as_attachment=True, download_name=filename)
+        return send_file(buffer, mimetype="application/pdf", as_attachment=True, download_name="entries.pdf")
 
-    # Render each entry
     for e in entries:
         ts = _fmt_entry_ts(e)
         flavor_label = FLAVOR_LABELS.get(e.get("flavor", ""), e.get("flavor", ""))
@@ -519,20 +558,17 @@ def export_pdf():
         wisdom_text = wisdom.get("text")
         wisdom_author = wisdom.get("author")
 
-        # Entry header line
         c.setFont("Helvetica-Bold", 11)
         header_line = f"{ts}   •   {flavor_label}   •   Mood: {mood_slider}"
         ensure_space(2)
         c.drawString(margin, y, header_line)
         y -= 13
 
-        # Analysis line
         c.setFont("Helvetica", 10)
         analysis_line = f"Mood score: {mood_score}   (+{pos} / -{neg})"
         c.drawString(margin, y, analysis_line)
         y -= 12
 
-        # Body text wrap
         max_w = page_w - 2 * margin
         c.setFont("Helvetica", 10)
 
@@ -547,7 +583,6 @@ def export_pdf():
                 c.drawString(margin, y, line)
                 y -= 12
 
-        # Quote / Spiritual / Wisdom blocks
         def draw_block(label: str, content: Optional[str], italic: bool = False):
             nonlocal y
             if not content:
@@ -582,20 +617,18 @@ def export_pdf():
                 c.drawString(margin, y, f"— {wisdom_author}")
                 y -= 12
 
-        # Spacer between entries
         ensure_space(1)
         y -= 6
         c.setLineWidth(0.3)
         c.setDash(1, 2)
         c.line(margin, y, page_w - margin, y)
-        c.setDash()  # reset
+        c.setDash()
         y -= 10
 
     c.showPage()
     c.save()
     buffer.seek(0)
 
-    # Filename with filters for convenience
     parts = ["entries"]
     if flavor:
         parts.append(flavor)
@@ -607,19 +640,21 @@ def export_pdf():
 
     return send_file(buffer, mimetype="application/pdf", as_attachment=True, download_name=filename)
 
+
 # ---------- Root-served PWA files ----------
 @app.get("/sw.js")
 def service_worker():
-    """Serve the service worker from the site root."""
     path = os.path.join(app.static_folder, "sw.js")
     return send_file(path, mimetype="application/javascript")
 
+
 @app.get("/manifest.webmanifest")
 def webmanifest():
-    """Serve the web app manifest from the site root."""
     path = os.path.join(app.static_folder, "manifest.webmanifest")
     return send_file(path, mimetype="application/manifest+json")
 
+
+# ---------- Settings / Admin ----------
 @app.post("/settings")
 def update_settings():
     ensure_files()
@@ -633,7 +668,7 @@ def update_settings():
     flash("Settings saved.", "ok")
     return redirect(url_for("index"))
 
-# ---------- Admin mini-API ----------
+
 @app.route("/add_wisdom", methods=["POST"], endpoint="add_wisdom")
 def add_wisdom():
     ensure_files()
@@ -647,6 +682,7 @@ def add_wisdom():
     flash("Wisdom quote added.", "ok")
     return redirect(url_for("index"))
 
+
 @app.route("/add_scripture", methods=["POST"], endpoint="add_scripture")
 def add_scripture():
     ensure_files()
@@ -659,10 +695,17 @@ def add_scripture():
     flash("Scripture added.", "ok")
     return redirect(url_for("index"))
 
-# Helper: list all registered routes
+
+# Utilities
 @app.get("/_routes")
 def list_routes():
     return jsonify(sorted([r.endpoint for r in app.url_map.iter_rules()]))
+
+
+@app.get("/health")
+def health():
+    return jsonify({"ok": True, "time": datetime.now().isoformat(timespec="seconds")})
+
 
 # ---------- Main ----------
 if __name__ == "__main__":
