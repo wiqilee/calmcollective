@@ -34,7 +34,7 @@ PROMPTS_PATH = os.path.join(ASSETS_DIR, "prompts.json")
 SCRIPTURES_PATH = os.path.join(ASSETS_DIR, "scriptures.json")
 WISDOM_PATH = os.path.join(ASSETS_DIR, "wisdom.json")
 
-# ---------- Friendly flavor labels (global) ----------
+# ---------- Friendly flavor labels ----------
 FLAVOR_LABELS: Dict[str, str] = {
     "secular": "Supportive (Secular)",
     "cultural_nusantara": "Nusantara Wisdom",
@@ -46,17 +46,16 @@ FLAVOR_LABELS: Dict[str, str] = {
 
 app = Flask(__name__)
 
-# ===== DEV-FRIENDLY SECURITY SETTINGS =====
+# ===== Security / session =====
 app.secret_key = os.getenv("SECRET_KEY", "dev-key-change-me")
-app.config["WTF_CSRF_TIME_LIMIT"] = None  # dev: do not expire within session
+app.config["WTF_CSRF_TIME_LIMIT"] = None
 app.config["WTF_CSRF_ENABLED"] = os.getenv("WTF_CSRF_ENABLED", "1") not in ("0", "false", "False")
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 app.config["SESSION_COOKIE_SECURE"] = False
 csrf = CSRFProtect(app)
-# ==========================================
 
 
-# ---------- Helpers: JSON I/O ----------
+# ---------- Helpers ----------
 def load_json(path, default):
     try:
         with open(path, "r", encoding="utf-8") as f:
@@ -95,23 +94,6 @@ def _append_to_map_list(path: str, flavor: str, item):
 def _last_entry() -> Optional[Dict]:
     entries: List[Dict] = load_json(ENTRIES_PATH, [])
     return entries[-1] if entries else None
-
-
-def _pick_variant(options: List, last_value):
-    if not options:
-        return None
-    if last_value in options and len(options) > 1:
-        pool = [o for o in options if o != last_value]
-        return random.choice(pool)
-    return random.choice(options)
-
-
-def _same_wisdom(a, b) -> bool:
-    return (
-        isinstance(a, dict) and isinstance(b, dict)
-        and a.get("text") == b.get("text")
-        and a.get("author") == b.get("author")
-    )
 
 
 def _parse_date_yyyy_mm_dd(s: Optional[str]) -> Optional[datetime]:
@@ -163,103 +145,22 @@ def _fmt_entry_ts(e: Dict) -> str:
     return dt.strftime("%Y-%m-%d %H:%M") if dt else (e.get("timestamp", "") or "")
 
 
-def _wrap_text_by_width(text: str, c: pdfcanvas.Canvas, max_width_pt: float, font_name: str = "Helvetica", font_size: int = 10) -> List[str]:
-    if not text:
-        return []
-    words = text.replace("\r", "").split()
-    lines: List[str] = []
-    current = ""
-    for w in words:
-        candidate = w if not current else (current + " " + w)
-        if c.stringWidth(candidate, font_name, font_size) <= max_width_pt:
-            current = candidate
-        else:
-            if current:
-                lines.append(current)
-            if c.stringWidth(w, font_name, font_size) > max_width_pt:
-                buf = ""
-                for ch in w:
-                    if c.stringWidth(buf + ch, font_name, font_size) <= max_width_pt:
-                        buf += ch
-                    else:
-                        if buf:
-                            lines.append(buf)
-                        buf = ch
-                current = buf
-            else:
-                current = w
-    if current:
-        lines.append(current)
-    return lines
-
-
-# ---------- Psych-informed support messages ----------
+# (optional) small helper to craft suggestions; falls back to micro_interventions
 def _craft_support_messages(text: str, analysis: Dict, mood: float) -> List[str]:
-    """
-    Produce up to 2 brief, compassionate, and actionable suggestions.
-    """
-    t = (text or "").lower()
-    pos = int(analysis.get("positive", 0) or 0)
-    neg = int(analysis.get("negative", 0) or 0)
-
-    pool = (micro_interventions(analysis) or []) + [
-        "Take 6 slow breaths: inhale 4s through your nose, exhale 6s. Notice your shoulders drop.",
-        "Try 5-4-3-2-1 grounding: 5 see, 4 touch, 3 hear, 2 smell, 1 taste.",
-        "Choose one tiny valued action: drink water, open a window, or tidy one item.",
-        "Message a trusted person one honest sentence about how you're feeling.",
-        "Place a hand on your chest and say: ‘This is hard, and I’m doing my best.’",
-        "Write down one thing that is within your control for the next hour."
+    base = micro_interventions(analysis) or []
+    extras = [
+        "Take 6 slow breaths: inhale 4s, exhale 6s.",
+        "Try 5-4-3-2-1 grounding.",
+        "Send one honest message to someone you trust.",
     ]
-
-    keyword_sets = [
-        ({"panic", "cemas", "anxious", "anxiety", "overwhelmed"}, [
-            "Take 6 slow breaths: inhale 4s through your nose, exhale 6s. Notice your shoulders drop.",
-            "Try 5-4-3-2-1 grounding: 5 see, 4 touch, 3 hear, 2 smell, 1 taste."
-        ]),
-        ({"lelah", "tired", "exhausted", "burnout"}, [
-            "Choose one tiny valued action: drink water, open a window, or tidy one item.",
-            "Place a hand on your chest and say: ‘This is hard, and I’m doing my best.’"
-        ]),
-        ({"sedih", "alone", "lonely"}, [
-            "Message a trusted person one honest sentence about how you're feeling.",
-            "Choose one tiny valued action: drink water, open a window, or tidy one item."
-        ]),
-        ({"marah", "anger", "kesal", "frustrated"}, [
-            "Take 6 slow breaths: inhale 4s through your nose, exhale 6s, for 1 minute.",
-            "Write down one thing that is within your control for the next hour."
-        ]),
-        ({"stress", "stres", "overwhelm"}, [
-            "Write down one thing that is within your control for the next hour.",
-            "Choose one tiny valued action: drink water, open a window, or tidy one item."
-        ]),
-    ]
-
-    prioritized: List[str] = []
-    for keys, suggestions in keyword_sets:
-        if any(k in t for k in keys):
-            prioritized.extend(suggestions)
-
-    if neg >= max(1, pos * 2):
-        prioritized.extend([
-            "Try 5-4-3-2-1 grounding: 5 see, 4 touch, 3 hear, 2 smell, 1 taste.",
-            "Place a hand on your chest and say: ‘This is hard, and I’m doing my best.’",
-        ])
-
-    crisis_tip = None
-    if mood <= 2:
-        crisis_tip = "If you feel unsafe or overwhelmed, consider reaching out to a trusted person or local helpline."
-
     seen = set()
-    ordered = []
-    for s in ([crisis_tip] if crisis_tip else []) + prioritized + pool:
-        if not s:
-            continue
-        k = s.strip().lower()
-        if k not in seen:
+    out = []
+    for s in base + extras:
+        k = (s or "").strip().lower()
+        if k and k not in seen:
             seen.add(k)
-            ordered.append(s)
-
-    return ordered[:2] if not crisis_tip else [ordered[0]] + ordered[1:3]
+            out.append(s)
+    return out[:3]
 
 
 # ---------- Global template context ----------
@@ -271,7 +172,7 @@ def inject_globals():
     }
 
 
-# ---------- CSRF: friendly error + no-store on HTML ----------
+# ---------- CSRF handler ----------
 @app.errorhandler(CSRFError)
 def handle_csrf_error(e):
     flash("Your form session expired or the CSRF token was missing. Please try again.", "error")
@@ -321,6 +222,7 @@ def journal():
     analysis = analyze_text(text)
     support = _craft_support_messages(text, analysis, mood)
 
+    # optional content picks (quotes/scriptures/wisdom)
     quotes_map = load_json(QUOTES_PATH, {})
     scriptures_map = load_json(SCRIPTURES_PATH, {})
     wisdom_map = load_json(WISDOM_PATH, {})
@@ -329,19 +231,20 @@ def journal():
 
     spiritual_candidates = scriptures_map.get(flavor) or scriptures_map.get("secular") or []
     last_spiritual = last.get("spiritual") if last else None
-    spiritual = _pick_variant(spiritual_candidates, last_spiritual)
+    spiritual = random.choice(spiritual_candidates) if spiritual_candidates else None
+    if last_spiritual and spiritual_candidates and len(spiritual_candidates) > 1:
+        pool = [s for s in spiritual_candidates if s != last_spiritual]
+        spiritual = random.choice(pool)
 
     quote_candidates = quotes_map.get(flavor) or quotes_map.get("secular") or ["You are doing the best you can."]
     last_quote = last.get("quote") if last else None
-    quote = _pick_variant(quote_candidates, last_quote)
+    quote = random.choice(quote_candidates)
+    if last_quote and len(quote_candidates) > 1:
+        pool = [q for q in quote_candidates if q != last_quote]
+        quote = random.choice(pool)
 
     wlist = wisdom_map.get(flavor) or wisdom_map.get("secular") or []
-    last_wisdom = last.get("wisdom") if last else None
-    if last_wisdom and wlist and any(_same_wisdom(last_wisdom, w) for w in wlist) and len(wlist) > 1:
-        wpool = [w for w in wlist if not _same_wisdom(w, last_wisdom)]
-        wisdom = random.choice(wpool)
-    else:
-        wisdom = random.choice(wlist) if wlist else None
+    wisdom = random.choice(wlist) if wlist else None
 
     entry = {
         "timestamp": datetime.now().isoformat(timespec="seconds"),
@@ -386,8 +289,8 @@ def entries():
     )
 
 
-# ---------- NEW: Delete a single entry by timestamp ----------
-@app.post("/entries/delete")
+# ---------- Delete entry (explicit endpoint name) ----------
+@app.route("/entries/delete", methods=["POST"], endpoint="delete_entry")
 def delete_entry():
     """
     Delete one journal entry identified by its timestamp string (exact match).
@@ -400,22 +303,20 @@ def delete_entry():
         return redirect(url_for("entries"))
 
     all_entries: List[Dict] = load_json(ENTRIES_PATH, [])
-    before = len(all_entries)
     kept = [e for e in all_entries if (e.get("timestamp") or "").strip() != ts]
-    removed = before - len(kept)
 
-    if removed > 0:
+    if len(kept) < len(all_entries):
         save_json(ENTRIES_PATH, kept)
         flash("Entry deleted.", "ok")
     else:
-        flash("Entry not found (maybe already deleted).", "error")
+        flash("Entry not found.", "error")
 
     return redirect(url_for("entries"))
 
 
+# ---------- Entries API (used by chart) ----------
 @app.get("/api/entries")
 def api_entries():
-    """Return entries as JSON with optional filters and limit."""
     ensure_files()
     all_entries: List[Dict] = load_json(ENTRIES_PATH, [])
 
@@ -425,7 +326,6 @@ def api_entries():
     limit = request.args.get("limit", type=int)
 
     filtered = _filter_entries(all_entries, flavor, start, end)
-
     if isinstance(limit, int) and limit > 0:
         filtered = filtered[-limit:]
 
@@ -435,6 +335,7 @@ def api_entries():
     return resp
 
 
+# ---------- Export pages & files ----------
 @app.get("/export")
 def export_page():
     ensure_files()
@@ -453,13 +354,12 @@ def export_json():
 
 @app.get("/export/csv")
 def export_csv():
-    """Safe CSV export using the csv module (proper quoting)."""
     ensure_files()
     entries = load_json(ENTRIES_PATH, [])
     fieldnames = ["timestamp", "mood_slider", "flavor", "mood_score", "positive", "negative", "text"]
 
     def row(e):
-        a = e.get("analysis", {})
+        a = e.get("analysis", {}) or {}
         return {
             "timestamp": e.get("timestamp", ""),
             "mood_slider": e.get("mood_slider", ""),
@@ -475,16 +375,13 @@ def export_csv():
     writer.writeheader()
     for e in entries:
         writer.writerow(row(e))
-    csv_data = sio.getvalue()
-    return app.response_class(response=csv_data, mimetype="text/csv")
+    return app.response_class(response=sio.getvalue(), mimetype="text/csv")
 
 
 @app.get("/export/pdf")
 def export_pdf():
-    """Generate a PDF of entries with the same filters as /entries and /api/entries."""
     ensure_files()
     all_entries: List[Dict] = load_json(ENTRIES_PATH, [])
-
     flavor = request.args.get("flavor", default="", type=str)
     start = request.args.get("start", default="", type=str)
     end = request.args.get("end", default="", type=str)
@@ -531,6 +428,35 @@ def export_pdf():
             y = page_h - margin
             draw_header()
 
+    def wrap(text: str, max_w: float, font="Helvetica", size=10) -> List[str]:
+        if not text:
+            return []
+        words = text.replace("\r", "").split()
+        out: List[str] = []
+        cur = ""
+        for w in words:
+            cand = w if not cur else (cur + " " + w)
+            if c.stringWidth(cand, font, size) <= max_w:
+                cur = cand
+            else:
+                if cur:
+                    out.append(cur)
+                if c.stringWidth(w, font, size) > max_w:
+                    buf = ""
+                    for ch in w:
+                        if c.stringWidth(buf + ch, font, size) <= max_w:
+                            buf += ch
+                        else:
+                            if buf:
+                                out.append(buf)
+                            buf = ch
+                    cur = buf
+                else:
+                    cur = w
+        if cur:
+            out.append(cur)
+        return out
+
     draw_header()
 
     if not entries:
@@ -541,6 +467,7 @@ def export_pdf():
         buffer.seek(0)
         return send_file(buffer, mimetype="application/pdf", as_attachment=True, download_name="entries.pdf")
 
+    max_w = page_w - 2 * margin
     for e in entries:
         ts = _fmt_entry_ts(e)
         flavor_label = FLAVOR_LABELS.get(e.get("flavor", ""), e.get("flavor", ""))
@@ -559,65 +486,51 @@ def export_pdf():
         wisdom_author = wisdom.get("author")
 
         c.setFont("Helvetica-Bold", 11)
-        header_line = f"{ts}   •   {flavor_label}   •   Mood: {mood_slider}"
-        ensure_space(2)
-        c.drawString(margin, y, header_line)
+        c.drawString(margin, y, f"{ts}   •   {flavor_label}   •   Mood: {mood_slider}")
         y -= 13
 
         c.setFont("Helvetica", 10)
-        analysis_line = f"Mood score: {mood_score}   (+{pos} / -{neg})"
-        c.drawString(margin, y, analysis_line)
+        c.drawString(margin, y, f"Mood score: {mood_score}   (+{pos} / -{neg})")
         y -= 12
 
-        max_w = page_w - 2 * margin
-        c.setFont("Helvetica", 10)
-
         if text:
-            ensure_space(2)
             c.setFont("Helvetica-Oblique", 10)
             c.drawString(margin, y, "Your words:")
             y -= 12
             c.setFont("Helvetica", 10)
-            for line in _wrap_text_by_width(text, c, max_w):
-                ensure_space(1)
+            for line in wrap(text, max_w):
                 c.drawString(margin, y, line)
                 y -= 12
 
-        def draw_block(label: str, content: Optional[str], italic: bool = False):
+        def block(label: str, content: Optional[str], italic=False):
             nonlocal y
             if not content:
                 return
-            ensure_space(2)
             c.setFont("Helvetica-Oblique", 10 if italic else 10)
             c.drawString(margin, y, f"{label}:")
             y -= 12
             c.setFont("Helvetica", 10)
-            for line in _wrap_text_by_width(content, c, max_w):
-                ensure_space(1)
-                c.drawString(margin, y, f"“{line}”" if label != "Wisdom" else line)
+            for line in wrap(content if label != "Wisdom" else f"“{content}”", max_w):
+                c.drawString(margin, y, line)
                 y -= 12
 
         if quote:
-            draw_block("Supportive note", quote, italic=True)
+            block("Supportive note", quote, italic=True)
         if spiritual:
-            draw_block("Spiritual note", spiritual, italic=True)
+            block("Spiritual note", spiritual, italic=True)
         if wisdom_text:
-            ensure_space(2)
             c.setFont("Helvetica-Oblique", 10)
             c.drawString(margin, y, "Wisdom:")
             y -= 12
             c.setFont("Helvetica", 10)
-            for line in _wrap_text_by_width(f"“{wisdom_text}”", c, max_w):
-                ensure_space(1)
+            for line in wrap(f"“{wisdom_text}”", max_w):
                 c.drawString(margin, y, line)
                 y -= 12
             if wisdom_author:
-                ensure_space(1)
                 c.setFont("Helvetica-Oblique", 10)
                 c.drawString(margin, y, f"— {wisdom_author}")
                 y -= 12
 
-        ensure_space(1)
         y -= 6
         c.setLineWidth(0.3)
         c.setDash(1, 2)
@@ -655,7 +568,7 @@ def webmanifest():
 
 
 # ---------- Settings / Admin ----------
-@app.post("/settings")
+@app.post("/settings", endpoint="update_settings")
 def update_settings():
     ensure_files()
     data = {

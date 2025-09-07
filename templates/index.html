@@ -15,6 +15,7 @@
         rows="5"
         placeholder="{{ prompt }}"
         aria-label="Write how you feel"
+        required
       ></textarea>
     </label>
 
@@ -76,103 +77,22 @@
 <section class="card">
   <h3>Safety & Support</h3>
 
-  <!-- App settings -->
-  <form method="POST" action="{{ url_for('update_settings') }}" class="grid">
-    <!-- CSRF -->
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-
-    <label>Emergency banner text
-      <input
-        name="emergency_text"
-        value="{{ settings.get('emergency_text','') }}"
-        placeholder="If you are in immediate danger, contact local emergency services."
-        aria-label="Emergency banner text"
-      />
-    </label>
-
-    <label>Emergency contact label
-      <input
-        name="emergency_contact_label"
-        value="{{ settings.get('emergency_contact_label','') }}"
-        placeholder="Family / Friend / Counselor"
-        aria-label="Emergency contact label"
-      />
-    </label>
-
-    <label>Emergency contact value
-      <input
-        name="emergency_contact_value"
-        value="{{ settings.get('emergency_contact_value','') }}"
-        placeholder="+62-812-0000-0000"
-        aria-label="Emergency contact value"
-      />
-    </label>
-
-    <label>Default support flavor
-      <select name="default_support_flavor" aria-label="Default support flavor">
-        {% for opt, label in flavor_labels.items() %}
-          <option value="{{ opt }}" {% if opt==settings.get('default_support_flavor','secular') %}selected{% endif %}>{{ label }}</option>
-        {% endfor %}
-      </select>
-    </label>
-
-    <button type="submit">Save Settings</button>
-  </form>
-
-  <!-- Emergency banner preview -->
+  <!-- Read-only banner pulled from settings.json (no form; avoids missing route errors) -->
   <div class="emergency" aria-live="polite">
-    <strong>{{ settings.get('emergency_text','') }}</strong>
+    <strong>{{ settings.get('emergency_text','If you are in immediate danger, contact local emergency services.') }}</strong>
     {% if settings.get('emergency_contact_value') %}
       <div>
-        Contact {{ settings.get('emergency_contact_label','') }}:
+        Contact {{ settings.get('emergency_contact_label','someone you trust') }}:
         <a href="tel:{{ settings.get('emergency_contact_value') }}">{{ settings.get('emergency_contact_value') }}</a>
       </div>
     {% endif %}
   </div>
 
-  <hr style="border:1px solid var(--border); opacity:0.4; margin:16px 0">
-
-  <!-- In-app editor: Wisdom quote -->
-  <h4>Add Wisdom Quote</h4>
-  <form method="POST" action="{{ url_for('add_wisdom') }}" class="grid">
-    <!-- CSRF -->
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-
-    <label>Text
-      <input name="wisdom_text" placeholder="e.g., This too shall pass." aria-label="Wisdom text"/>
-    </label>
-    <label>Author
-      <input name="wisdom_author" placeholder="e.g., Persian Proverb" aria-label="Wisdom author"/>
-    </label>
-    <label>Flavor
-      <select name="wisdom_flavor" aria-label="Wisdom flavor">
-        {% for opt, label in flavor_labels.items() %}
-          <option value="{{ opt }}">{{ label }}</option>
-        {% endfor %}
-      </select>
-    </label>
-    <button type="submit">Add Wisdom</button>
-  </form>
-
-  <!-- In-app editor: Scripture / Spiritual quote -->
-  <h4>Add Scripture / Spiritual Quote</h4>
-  <form method="POST" action="{{ url_for('add_scripture') }}" class="grid">
-    <!-- CSRF -->
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-
-    <label>Text (include reference)
-      <input name="scripture_text" placeholder="e.g., “Cast all your anxiety on Him...” (1 Peter 5:7)" aria-label="Scripture text"/>
-    </label>
-    <label>Flavor
-      <select name="scripture_flavor" aria-label="Scripture flavor">
-        {% for opt, label in flavor_labels.items() %}
-          <option value="{{ opt }}">{{ label }}</option>
-        {% endfor %}
-      </select>
-    </label>
-    <div></div>
-    <button type="submit">Add Scripture</button>
-  </form>
+  <!-- Quick links that point only to routes that exist -->
+  <div style="margin-top:12px;">
+    <a class="secondary" href="{{ url_for('entries') }}">View Entries</a>
+    <a class="secondary" href="{{ url_for('export_page') }}" style="margin-left:8px;">Export</a>
+  </div>
 </section>
 
 <!-- Mood slider color + dynamic description -->
@@ -188,6 +108,9 @@
 
   .card { transition: transform 0.15s ease, box-shadow 0.15s ease; margin-bottom: 20px; }
   .card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+
+  .emergency { margin-top: 8px; padding: 10px 12px; border-radius: 10px;
+    background: rgba(248,114,114,0.10); border: 1px solid rgba(248,114,114,0.4); color: #ffd9d9; }
 </style>
 
 <script>
